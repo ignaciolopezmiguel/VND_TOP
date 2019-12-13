@@ -2,7 +2,7 @@
 """
 Created on Wed Dec 11 17:04:24 2019
 
-@author: nchlp
+@author: Ignacio David López Miguel
 """
 
 import pandas as pd
@@ -12,10 +12,24 @@ import matplotlib.pyplot as plt
 # run "%matplotlib qt" to interact with the graphs
 
 def plot_map(data):
-    plt.plot(data[:,0],data[:,1],"*")
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.plot(data[0,0],data[0,1],"o",color = "b")
-    plt.plot(data[-1,0],data[-1,1],"o",color = "b")
+    plt.scatter(data[:,0], data[:,1], 
+            s=(data[:,2])*25)
+    ax = plt.gca()
+    
+    plt.xlabel("x")
+    plt.ylabel("y")
+    
+    
+    #make a legend:
+    pws = [0, 5, 10, 15]
+    for pw in pws:
+        plt.scatter([], [], s=pw*25, c="k",label=str(pw))
+    
+    h, l = plt.gca().get_legend_handles_labels()
+    plt.legend(h[1:], l[1:], labelspacing=1, title="value", borderpad=1, 
+                frameon=True, framealpha=1, edgecolor="k", facecolor="w")
+    
+    plt.show()
 
 def distance(x1,x2):
     return np.array([np.linalg.norm(x) for x in x1 - x2])
@@ -38,13 +52,12 @@ def total_score(data, x):
         score += sum(data[i,2])
     return score
 
-def init_sol_greedy_scores(data, Tmax, n, P, order):
+def init_sol_greedy_scores(data, Tmax, n, P):
     """
     1. select points inside of the ellipse.
-    2. order the points according to the distance to the start node or to their
-       score (option to be selected with the argument "order")
-    3. take the furthest node (or with the best score) and assign it to the 
-       first path
+    2. order the points according to their score
+    3. take the node with the best score and assign it to the 
+       first path (in case of same score, the closest node is taken)
     4. take the next best node and assign it to the next path, ...
     5. the following nodes are assigned to the first path where it is possible,
        i.e. the distance of the path is smaller than Tmax
@@ -71,10 +84,9 @@ def init_sol_greedy_scores(data, Tmax, n, P, order):
     pd_Tot_Dist = pd.DataFrame({"TotDist": dist_st + dist_fin, 
                                 "Score": data[1:-1, 2]})
     
-    #Select points inside of the ellipse and order by score or by distance
-    dic_order = {"score" : "Score", "distance" : "TotDist"}
-    pd_Tot_Dist = pd_Tot_Dist[pd_Tot_Dist[dic_order[order]]<Tmax].sort_values(
-            by=["Score","TotDist"], ascending=False)
+    #Select points inside of the ellipse and order by score
+    pd_Tot_Dist = pd_Tot_Dist[pd_Tot_Dist["TotDist"]<Tmax].sort_values(
+        by=["Score","TotDist"], ascending=[False,True])
     
     # Fill in the first P paths
     init_points = [[] for i in range(0,P)]
