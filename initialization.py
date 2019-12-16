@@ -1,59 +1,15 @@
-# -*- coding: utf-8 -*-
 """
-Created on Wed Dec 11 17:04:24 2019
-
-@author: Ignacio David López Miguel
+Find an initialization for the problem.
 """
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 
-# run "%matplotlib qt" to interact with the graphs
-
-def plot_map(data):
-    plt.scatter(data[:,0], data[:,1], 
-            s=(data[:,2])*25)
-    ax = plt.gca()
-    
-    plt.xlabel("x")
-    plt.ylabel("y")
-    
-    
-    #make a legend:
-    pws = [0, 5, 10, 15]
-    for pw in pws:
-        plt.scatter([], [], s=pw*25, c="k",label=str(pw))
-    
-    h, l = plt.gca().get_legend_handles_labels()
-    plt.legend(h[1:], l[1:], labelspacing=1, title="value", borderpad=1, 
-                frameon=True, framealpha=1, edgecolor="k", facecolor="w")
-    
-    plt.show()
-
-def distance(x1,x2):
-    return np.array([np.linalg.norm(x) for x in x1 - x2])
-
-def distance_no_start_exit(data, path, n):
-    path.insert(0,0)
-    path.append(n-1)
-    tot_dist = total_distance(data[path])
-    path.pop(0)
-    path.pop(-1)
-    return tot_dist
-
-
-def total_distance(points):
-    return sum(distance(points[0:-1,0:2], points[1:,0:2]))
-
-def total_score(data, x):
-    score = 0
-    for i in x:
-        score += sum(data[i,2])
-    return score
+from general import distance, distance_no_start_exit
 
 def init_sol_greedy_scores(data, Tmax, n, P):
     """
+    Returns an initial solution (list of paths) following this logic:
     1. select points inside of the ellipse.
     2. order the points according to their score
     3. take the node with the best score and assign it to the 
@@ -74,6 +30,13 @@ def init_sol_greedy_scores(data, Tmax, n, P):
     12.plot in dashed line the paths created the last, in continuos, small
        line the created paths in the beginning, in continuos, thick line the
        selected ones
+    
+    Inputs:
+        data: array with the coordinates of all the points
+        Tmax: integer with the maximum distance for each path
+        n: index of the end point of the path (last index of data)
+        P: integer with the number of paths
+    
     """
     f1 = np.array(data[0,0:2])
     f2 = np.array(data[-1,0:2])

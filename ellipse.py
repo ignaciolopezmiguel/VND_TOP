@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
 """
-Created on Wed Nov  6 23:18:07 2019
-
-@author: Ignacio David López Miguel
+Plot ellipse of feasible points.
 """
 
 import matplotlib.pyplot as plt
@@ -53,7 +50,7 @@ def plot_ellipse(f1, f2, Tmax):
     
     plt.gca().set_aspect('equal', adjustable='box')
     plt.plot(f1[0], f1[1], "*", color="blue")
-    plt.plot(f2[0], f2[1], "o", color="blue")
-    plt.plot(pos_backs[:,0],pos_backs[:,1])
-    plt.plot(neg_backs[:,0],neg_backs[:,1])
+    plt.plot(f2[0], f2[1], "*", color="blue")
+    plt.plot(pos_backs[:,0],pos_backs[:,1], color="blue")
+    plt.plot(neg_backs[:,0],neg_backs[:,1], color="blue")
     
