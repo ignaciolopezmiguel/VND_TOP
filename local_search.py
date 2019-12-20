@@ -62,7 +62,7 @@ def combinations(list1, list2, num):
                         output.append([temp,[m,n,p]])
     return output
 
-def loc_search_add(data, paths, n, Tmax, first=True):
+def loc_search_add(data, paths, n, Tmax, first=True, distances=None):
     """
     Local search adding 1 new point and reordering.
     Returns a list of paths after trying to insert one new element into one
@@ -79,14 +79,21 @@ def loc_search_add(data, paths, n, Tmax, first=True):
     """    
     
     # Calculate distance to the start and end points
-    f1 = np.array(data[0,0:2])
-    f2 = np.array(data[-1,0:2])
-    
-    dist_st = distance(data[1:-1, 0:2], f1)
-    dist_fin = distance(data[1:-1, 0:2], f2)
-    
-    df_Tot_Dist = pd.DataFrame({"TotDist": dist_st + dist_fin, 
-                                "Score": data[1:-1, 2]})
+
+    if distances is not None:
+        dist_st = np.array([x[2] for x in distances if (x[0]==0) and (x[1]!=n-1)])
+        dist_fin = np.array([x[2] for x in distances if (x[1]==n-1) and (x[0]!=0)])
+        df_Tot_Dist = pd.DataFrame({"TotDist": dist_st + dist_fin, 
+                                    "Score": data[1:-1, 2].tolist()})
+    else:
+        f1 = np.array(data[0,0:2])
+        f2 = np.array(data[-1,0:2])
+        
+        dist_st = distance(data[1:-1, 0:2], f1)
+        dist_fin = distance(data[1:-1, 0:2], f2)
+        
+        df_Tot_Dist = pd.DataFrame({"TotDist": dist_st + dist_fin, 
+                                    "Score": data[1:-1, 2]})
     
     # Select points inside of the ellipse and order by score
     df_Tot_Dist = df_Tot_Dist[df_Tot_Dist["TotDist"]<Tmax].sort_values(
@@ -106,9 +113,9 @@ def loc_search_add(data, paths, n, Tmax, first=True):
         for i in range(0,len(df_Tot_Dist)): # loop over all the non-assigned points
             path.insert(0,df_Tot_Dist.index[i]+1)
 
-            path_best = find_best_way(data,[0]+path+[n-1])
+            path_best = find_best_way(data,[0]+path+[n-1],distances)
 
-            if distance_no_start_exit(data, path_best[1:-1], n) <= Tmax:
+            if distance_no_start_exit(data, path_best[1:-1], n, distances) <= Tmax:
                 # remove newly assigned point from the list of non-asssigned points
                 df_Tot_Dist = df_Tot_Dist[df_Tot_Dist.index != df_Tot_Dist.index[i]]
                 paths[k] = path_best
@@ -133,7 +140,7 @@ def loc_search_add(data, paths, n, Tmax, first=True):
     return paths
 
  
-def loc_search_exch(data, paths, Tmax, n, num, first=True):
+def loc_search_exch(data, paths, Tmax, n, num, first=True, distances=None):
     """
     Local search exchanging num new points with num points of one path and 
     reordering.
@@ -153,14 +160,20 @@ def loc_search_exch(data, paths, Tmax, n, num, first=True):
     """  
     
     # Calculate distance to the start and end points
-    f1 = np.array(data[0,0:2])
-    f2 = np.array(data[-1,0:2])
-    
-    dist_st = distance(data[1:-1, 0:2], f1)
-    dist_fin = distance(data[1:-1, 0:2], f2)
-    
-    df_Tot_Dist_all = pd.DataFrame({"TotDist": dist_st + dist_fin, 
-                                "Score": data[1:-1, 2]})
+    if distances is not None:
+        dist_st = np.array([x[2] for x in distances if (x[0]==0) and (x[1]!=n-1)])
+        dist_fin = np.array([x[2] for x in distances if (x[1]==n-1) and (x[0]!=0)])
+        df_Tot_Dist_all = pd.DataFrame({"TotDist": dist_st + dist_fin, 
+                                    "Score": data[1:-1, 2].tolist()})
+    else:
+        f1 = np.array(data[0,0:2])
+        f2 = np.array(data[-1,0:2])
+        
+        dist_st = distance(data[1:-1, 0:2], f1)
+        dist_fin = distance(data[1:-1, 0:2], f2)
+        
+        df_Tot_Dist_all = pd.DataFrame({"TotDist": dist_st + dist_fin, 
+                                    "Score": data[1:-1, 2]})
     
     #Select points inside of the ellipse and order by score
     df_Tot_Dist = df_Tot_Dist_all[df_Tot_Dist_all["TotDist"]<Tmax].sort_values(
@@ -179,18 +192,21 @@ def loc_search_exch(data, paths, Tmax, n, num, first=True):
         orig_score = total_score(data, [path])
         path = path[1:-1] # remove the first and last element
         combs = combinations(path,df_Tot_Dist.index,num)
+
         for comb in combs:
+
             # exchange elements if the new path has a higher score
             newpath = [0]+exchange(path, df_Tot_Dist.index+1,comb[0],comb[1])+[n-1]
 
             if orig_score >= total_score(data, [newpath]):
                 continue
             # re-order the path
-            newpath = find_best_way(data,newpath)
+            newpath = find_best_way(data,newpath,distances)
+
             if (newpath[0] != 0) or (newpath[-1] != n-1): # in case the TSP does not work properly
                 newpath = [0]+exchange(path, df_Tot_Dist.index+1,comb[0],comb[1])+[n-1]
             
-            if (distance_no_start_exit(data, newpath[1:-1], n) <= Tmax):
+            if (distance_no_start_exit(data, newpath[1:-1], n, distances) <= Tmax):
                 # assign new path and leave all the loops
                 paths[k] = newpath
                 

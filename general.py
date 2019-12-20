@@ -38,7 +38,7 @@ def distance(array_points,x):
     """
     return np.array([np.linalg.norm(x) for x in array_points - x])
 
-def distance_no_start_exit(data, path, n):
+def distance_no_start_exit(data, path, n, distances=None):
     """
     Returns the distance of a path where the start and ending point are not
     included in the list of points.
@@ -50,13 +50,13 @@ def distance_no_start_exit(data, path, n):
     """
     path.insert(0,0)
     path.append(n-1)
-    tot_dist = total_distance(data[path])
+    tot_dist = total_distance(data, path, distances)
     path.pop(0)
     path.pop(-1)
     return tot_dist
 
 
-def total_distance(points):
+def total_distance(data, path, distances=None):
     """
     Returns the total distance of a path given a list of points (coordinates
     x and y).
@@ -66,7 +66,16 @@ def total_distance(points):
     Example:
         total_distance(np.array([[1,2],[3,4],[5,5]])) #=np.sqrt(4+4)+np.sqrt(4+1)
     """
-    return sum(distance(points[0:-1,0:2], points[1:,0:2]))
+    
+    if distances is not None:
+        total = 0
+        for i in range(0,len(path)-1):
+            start = path[i]
+            ending = path[i+1]
+            total += [x[2] for x in distances if ((x[0]==start) and (x[1]==ending)) or ((x[0]==ending) and (x[1]==start))][0]
+        return total
+    else:
+        return sum(distance(data[path][0:-1,0:2], data[path][1:,0:2]))
 
 def total_score(data, path):
     """

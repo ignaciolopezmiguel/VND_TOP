@@ -7,7 +7,7 @@ import numpy as np
 
 from general import distance, distance_no_start_exit
 
-def init_sol_greedy_scores(data, Tmax, n, P):
+def init_sol_greedy_scores(data, Tmax, n, P, distances=None):
     """
     Returns an initial solution (list of paths) following this logic:
     1. select points inside of the ellipse.
@@ -38,14 +38,21 @@ def init_sol_greedy_scores(data, Tmax, n, P):
         P: integer with the number of paths
     
     """
-    f1 = np.array(data[0,0:2])
-    f2 = np.array(data[-1,0:2])
-    
-    dist_st = distance(data[1:-1, 0:2], f1)
-    dist_fin = distance(data[1:-1, 0:2], f2)
-    
-    pd_Tot_Dist = pd.DataFrame({"TotDist": dist_st + dist_fin, 
-                                "Score": data[1:-1, 2]})
+
+    if distances is not None:
+        dist_st = np.array([x[2] for x in distances if (x[0]==0) and (x[1]!=n-1)])
+        dist_fin = np.array([x[2] for x in distances if (x[1]==n-1) and (x[0]!=0)])
+        pd_Tot_Dist = pd.DataFrame({"TotDist": dist_st + dist_fin, 
+                                    "Score": data[1:-1, 2][0]})
+    else:
+        f1 = np.array(data[0,0:2])
+        f2 = np.array(data[-1,0:2])
+        
+        dist_st = distance(data[1:-1, 0:2], f1)
+        dist_fin = distance(data[1:-1, 0:2], f2)
+        
+        pd_Tot_Dist = pd.DataFrame({"TotDist": dist_st + dist_fin, 
+                                    "Score": data[1:-1, 2]})
     
     #Select points inside of the ellipse and order by score
     pd_Tot_Dist = pd_Tot_Dist[pd_Tot_Dist["TotDist"]<Tmax].sort_values(
@@ -63,7 +70,7 @@ def init_sol_greedy_scores(data, Tmax, n, P):
         for j in range(0,P):
             init_points[j].append(new_point)
             
-            if distance_no_start_exit(data, init_points[j], n) <= Tmax: # path found
+            if distance_no_start_exit(data, init_points[j], n, distances) <= Tmax: # path found
                 break
             else: # try with the next path
                 init_points[j].pop(-1)
@@ -88,8 +95,8 @@ def init_sol_greedy_scores(data, Tmax, n, P):
             new_point = not_assigned[0]
             not_assigned.pop(0)
             for i in range(0,len(other_paths)):
-                
-                if distance_no_start_exit(data, other_paths[i], n) > Tmax: #not possible in this path
+                other_paths[i].append(new_point)
+                if distance_no_start_exit(data, other_paths[i], n, distances) > Tmax: #not possible in this path
                     other_paths[i].pop(-1)
                     if i == len(other_paths)-1: #path not found, create new one
                         other_paths.append([new_point])
@@ -101,7 +108,6 @@ def init_sol_greedy_scores(data, Tmax, n, P):
             other_paths[j].insert(0,0)
             other_paths[j].append(n-1)
            
-     
         # Select the P best scores
         scores = []
         scores = [[sum(data[i,2]),i] for i in init_points]
